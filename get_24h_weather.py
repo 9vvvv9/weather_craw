@@ -7,16 +7,31 @@ import requests
 import pymysql  # 导入MySQL驱动
 import js2xml
 from lxml import etree
+from get_user_agent import get_user_agent
 
-#city_id = '101270101'
-def get_weather(city_id,cursor):
+#city_id = '101270201'
+#user_agent = get_user_agent()
+def get_weather(city_id,cursor,user_agent):
     # conn=pymysql.connect(host='localhost',user='root',passwd='root',db='weather',port=3306,charset='utf8')  #连接数据库
     # cursor=conn.cursor()   # 使用cursor()方法获取操作游标
+    #http://www.weather.com.cn/weather1d/101270101.shtml#input
 
-    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'} 
+    headers = {'User-Agent':user_agent} 
     url = 'http://www.weather.com.cn/weather1d/'+city_id+'.shtml#input'
     response = requests.get(url, headers=headers)    # 提交requests get 请求
     soup = BeautifulSoup(response.content, "lxml")       # 用Beautifulsoup 进行解析
+
+    div = soup.find('div', class_='crumbs fl')
+    span_list = div.find_all('span')
+    a_list = div.find_all('a')
+    area = span_list[3].text
+    #print(area)
+    if area =='城区':
+        city_name = a_list[2].text
+    else:
+        city_name = span_list[3].text
+    #print(city_name)
+
     src = soup.select('body script')[6].string
     src_text = js2xml.parse(src, encoding='utf-8', debug=False)  # javascript代码解析，返回一个Element对象
     #print(type(src_text))
@@ -34,12 +49,13 @@ def get_weather(city_id,cursor):
 
     for each_hour in list_hour:
         #print(type(each_3hour))
-        cursor.execute('insert into forecast_24h(time,city_id,temperature,hour_desc,wind,wind_size) values(%s,%s,%s,%s,%s,%s)',(each_hour[0],city_id,each_hour[3],each_hour[2],each_hour[4],each_hour[5]))
+        cursor.execute('insert into forecast_24h(time,city_id,city_name,temperature,hour_desc,wind,wind_size) values(%s,%s,%s,%s,%s,%s,%s)',(each_hour[0],city_id,city_name,each_hour[3],each_hour[2],each_hour[4],each_hour[5]))
         
     # conn.commit()  # 提交事务
     # cursor.close()  # 关闭光标对象
     # conn.close()  #关闭数据库连接
 
 
-    
+# if __name__=='__main__':
+#     get_weather(city_id)
 

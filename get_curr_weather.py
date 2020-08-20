@@ -7,13 +7,14 @@ import time
 from datetime import datetime
 import json  #可以使用 json 模块来对 JSON 数据进行编解码
 import pymysql  # 导入MySQL驱动
+from get_user_agent import get_user_agent
 
 # 使用cursor()方法获取操作游标
 # conn=pymysql.connect(host='localhost',user='root',passwd='root',db='weather',port=3306,charset='utf8')  #连接数据库
 # cursor=conn.cursor() 
-# city_id = '101270101'
+#city_id = '101270101'
 
-def get_currtem(city_id,cursor):
+def get_currtem(city_id,cursor,user_agent):
     
     #获取毫秒
     t = time.time()  #time.time()用于获取当前时间戳(1970纪元后经过的浮点秒数)
@@ -26,7 +27,7 @@ def get_currtem(city_id,cursor):
                 'Accept-Language':'zh-Hans-CN, zh-Hans; q=0.5',
                 'Connection':'Keep-Alive',
                 'Host':'d1.weather.com.cn',  #请求的web服务器域名地址
-                'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36',
+                'User-Agent':user_agent,
                 'Referer':'http://www.weather.com.cn/weather1dn/'+city_id+'.shtml'
                 #http://www.weather.com.cn/weather1dn/101010100.shtml
             }
@@ -53,20 +54,23 @@ def get_currtem(city_id,cursor):
     # groups()返回一个包含所有小组字符串的元组
     # jsonstr.group():返回{}里面的内容
     # json.loads(): 对数据进行解码
+
     dict_json = json.loads(json_str.group())  # 将 JSON 对象转换为 Python 字典(dict)
-    # print(dict_json)
+    #print(dict_json)
+    city_name = dict_json['cityname']
     currtem = dict_json['temp']+'℃'   #获取字典中的实时温度
-    dt=datetime.now() #创建一个datetime类对象
-    time_str = str(dt.strftime('%y-%m-%d %I:%M:%S %p'))
-    print(time_str)
-    print(city_id,currtem)
-    cursor.execute('insert into current_weather(city_id,current_tem,time_now) values(%s,%s,%s)',(city_id,currtem,time_str))
+    date = dict_json['date']
+    update_time = dict_json['time']
+    weather = dict_json['weather']
+
+    print(city_name,currtem,date,update_time,weather)
+    cursor.execute('insert into current_weather(city_id,city_name,current_tem,date,update_time,weather) values(%s,%s,%s,%s,%s,%s)',(city_id,city_name,currtem,date,update_time,weather))
     #准备执行的sql,并执行SQL语句
     #conn.commit()  # 提交事务
 
 
 # if __name__=='__main__':
-#     get_currtem(city_id,cursor)
+#     get_currtem(city_id)
 
 
 # cursor.close()  # 关闭光标对象

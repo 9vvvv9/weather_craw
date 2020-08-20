@@ -7,18 +7,32 @@ import requests
 import pymysql  # 导入MySQL驱动
 import js2xml
 from lxml import etree
+from get_user_agent import get_user_agent
 
-# city_id = '101270101'
+#city_id = '101270102'
 # conn=pymysql.connect(host='localhost',user='root',passwd='root',db='weather',port=3306,charset='utf8')  #连接数据库
 # cursor=conn.cursor()   # 使用cursor()方法获取操作游标
 
-def get_weather(city_id,cursor):
+#user_agent = get_user_agent()
+def get_weather(city_id,cursor,user_agent):
     
-    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'} 
+    headers = {'User-Agent':user_agent} 
     url = 'http://www.weather.com.cn/weathern/'+city_id+'.shtml'
 
     response = requests.get(url, headers=headers)    # 提交requests get 请求
     soup = BeautifulSoup(response.content, "lxml")       # 用Beautifulsoup 进行解析
+    div = soup.find('div', class_='weather_location')
+    div_list = div.find_all('div')
+    area = div_list[9].find('a').text.strip()
+    #print(area)
+    area2 = '城区'
+    #print(type(area2))
+    if area == area2:
+        city_name = div_list[6].find('a').text
+    else:
+        city_name = div_list[9].find('a').text
+    #print(city_name)
+
     #response.content: 以字节的方式访问请求响应体，对于非文本请求:Requests 会自动为你解码 gzip 和 deflate 传输编码的响应数据
     src = soup.select('body script')[6].string
     src_text = js2xml.parse(src, encoding='utf-8', debug=False)  # javascript代码解析，返回一个Element对象
@@ -53,14 +67,13 @@ def get_weather(city_id,cursor):
     list_desc.remove('')
     print(list_desc)
 
-
     weather_con = list(zip(event_day,event_night,sunup,sunset,list_date,list_desc,list_wind))
     #print(type(weather_con[0]))
     print(weather_con)
 
     for each_day in weather_con:
         #sql = 'insert into forecast_7d(each_day,each_night,each_sunup,each_sunset) values(%s,%s,%s,%s)',(weather_con[0],weather_con[1],weather_con[2],weather_con[3])
-        cursor.execute('insert into forecast_7d(city_id,each_day,each_night,each_sunup,each_sunset,each_date,each_desc,each_wind) values(%s,%s,%s,%s,%s,%s,%s,%s)',(city_id,each_day[0],each_day[1],each_day[2],each_day[3],each_day[4],each_day[5],each_day[6]))
+        cursor.execute('insert into forecast_7d(city_id,city_name,each_day,each_night,each_sunup,each_sunset,each_date,each_desc,each_wind) values(%s,%s,%s,%s,%s,%s,%s,%s,%s)',(city_id,city_name,each_day[0],each_day[1],each_day[2],each_day[3],each_day[4],each_day[5],each_day[6]))
 
     # conn.commit()  # 提交事务
     # cursor.close()  # 关闭光标对象
@@ -73,5 +86,8 @@ def get_weather(city_id,cursor):
     # print(sunset)
 
 
+
+# if __name__=='__main__':
+#     get_weather(city_id)
     
 

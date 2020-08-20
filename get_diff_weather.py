@@ -5,14 +5,17 @@ import lxml
 from bs4 import BeautifulSoup
 import requests
 import pymysql  # 导入MySQL驱动
+from datetime import datetime
+from get_user_agent import get_user_agent
 
 # conn=pymysql.connect(host='localhost',user='root',passwd='root',db='weather',port=3306,charset='utf8')  #连接数据库
 # cursor=conn.cursor()   # 使用cursor()方法获取操作游标
 
-def get_temperature(cursor):
+#user_agent = get_user_agent()
+def get_temperature(cursor,user_agent):
 
     #User-Agent能使服务器识别客户使用的操作系统及版本、CPU 类型、浏览器及版本、浏览器渲染引擎、浏览器语言、浏览器插件等
-    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'} 
+    headers = {'User-Agent':user_agent} 
     url = 'http://www.weather.com.cn/textFC/sichuan.shtml'
 
     response = requests.get(url, headers=headers)    # 提交requests get 请求
@@ -20,10 +23,12 @@ def get_temperature(cursor):
     #response.encoding = 'utf-8'
 
     province = soup.find('div', class_='conMidtab')
-    da = province.find(name='div', class_='conMidtab5')
-    td_li = da.find('tr').find_all('td')
-    date = td_li[2].text[3:8]
+    # da = province.find(name='div', class_='conMidtab5')
+    # td_li = da.find('tr').find_all('td')
+    # date = td_li[2].text
     
+    date = datetime.now().strftime('%m月%d日')
+    #print(date)
     city = province.find_all(name='div', class_='conMidtab3')   #每个conMidtab3代表一个市，city代表市的集合
     for each_city in city:
         area = each_city.find_all('tr')    #area是每个区的集合
@@ -48,11 +53,13 @@ def get_temperature(cursor):
                 tem_min = td_list[6].text.replace('\n', '')
                 #print(type(city_name))
             print(city_name, weather_day, wind_day, tem_max, weather_night, wind_night, tem_min)
-            cursor.execute('insert into forecast(time,city_name,weather_day,wind_day,tem_max,weather_night, wind_night, tem_min) values(%s,%s,%s,%s,%s,%s,%s,%s)',(date,city_name,weather_day,wind_day,tem_max,weather_night, wind_night, tem_min))
+            cursor.execute('insert into forecast(date,city_name,weather_day,wind_day,tem_max,weather_night, wind_night, tem_min) values(%s,%s,%s,%s,%s,%s,%s,%s)',(date,city_name,weather_day,wind_day,tem_max,weather_night, wind_night, tem_min))
             #准备执行的sql,并执行SQL语句
             # conn.commit()  # 提交事务
             # cursor.close()  # 关闭光标对象
             # conn.close()  #关闭数据库连接
 
+# if __name__=='__main__':
+#     get_temperature(user_agent)
 
 

@@ -2,6 +2,7 @@ import get_7d_weather
 import get_24h_weather
 import get_curr_weather
 import get_diff_weather
+from get_user_agent import get_user_agent
 import pymysql  # 导入MySQL驱动
 import schedule
 import time
@@ -215,32 +216,35 @@ city_ids = ['101270101',
 
 def get_cuur():
     for city_id in city_ids:
-        get_curr_weather.get_currtem(city_id,cursor)
+        get_curr_weather.get_currtem(city_id,cursor,user_agent)
 
 def get_24h():
     for city_id in city_ids:
-        get_24h_weather.get_weather(city_id,cursor)
+        get_24h_weather.get_weather(city_id,cursor,user_agent)
 
 def get_7d():
     for city_id in city_ids:
-        get_7d_weather.get_weather(city_id,cursor)
+        get_7d_weather.get_weather(city_id,cursor,user_agent)
 
+def get_diff():
+    get_diff_weather.get_temperature(cursor,user_agent)
 
 if __name__=='__main__':
-    #get_diff_weather.get_temperature(cursor)
-    schedule.every().day.at("10:30").do(get_diff_weather.get_temperature, cursor)
-    schedule.every(30).minutes.do(get_cuur)
-    schedule.every(24).hours.do(get_24h)
-    schedule.every(7).days.do(get_7d)
+    user_agent = get_user_agent()
+    #get_diff_weather.get_temperature(cursor,user_agent)
+    #schedule.every().day.at("21:57").do(get_diff)
+    # schedule.every(30).minutes.do(get_cuur)
+    # schedule.every(24).hours.do(get_24h)
+    # schedule.every(7).days.do(get_7d)
         
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+    # while True:
+    #     schedule.run_pending()
+    #     time.sleep(1)
 
-    # for city_id in city_ids:
-    #     get_curr_weather.get_currtem(city_id,cursor)
-    #     get_24h_weather.get_weather(city_id,cursor)
-    #     get_7d_weather.get_weather(city_id,cursor)
+    for city_id in city_ids:
+        get_curr_weather.get_currtem(city_id,cursor,user_agent)
+    #    get_24h_weather.get_weather(city_id,cursor,user_agent)
+    #    get_7d_weather.get_weather(city_id,cursor,user_agent)
 
 conn.commit()  # 提交事务    
 cursor.close()  # 关闭光标对象
